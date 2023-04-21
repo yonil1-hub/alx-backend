@@ -1,35 +1,50 @@
 #!/usr/bin/env python3
 """
-Implements a Least Frequently Used caching module.
+Implements a Least Frequently Used caching module using an OrderedDict
 """
+
 from collections import OrderedDict
 from base_caching import BaseCaching
 
 
 class LFUCache(BaseCaching):
     """
-    Represents a Least Frequently Used (LFU) caching mechanism, where
-    the least frequently used items are removed when the cache limit is
-    reached. Inherits from BaseCaching.
+    A class that represents a cache with a least frequently used (LFU)
+    replacement strategy.
     """
     def __init__(self):
-        """Initializes the LFU cache"""
+        """
+        Initializes the cache with an empty OrderedDict to hold the cache data,
+        and an empty list to hold the keys and their frequencies.
+        """
         super().__init__()
         self.cache_data = OrderedDict()
-        self.key_freq = OrderedDict()
+        self.keys_freq = []
 
-    def __reorder_items(self, key):
+    def __reorder_items(self, mru_key):
         """
-        Reorders the items in the cache based on the least frequently
-        used item.
+        Reorders the keys_freq list based on the most recently used item.
         """
-        freq = self.key_freq[key]
-        self.key_freq[key] = freq + 1
-        del self.cache_data[key]
-        for k, v in self.key_freq.items():
-            if v == freq:
-                self.cache_data[k] = self.cache_data.pop(k)
-        self.cache_data[key] = self[key]
+        max_positions = []
+        mru_freq = 0
+        mru_pos = 0
+        ins_pos = 0
+        for i, key_freq in enumerate(self.keys_freq):
+            if key_freq[0] == mru_key:
+                mru_freq = key_freq[1] + 1
+                mru_pos = i
+                break
+            elif not max_positions:
+                max_positions.append(i)
+            elif key_freq[1] < self.keys_freq[max_positions[-1]][1]:
+                max_positions.append(i)
+        max_positions.reverse()
+        for pos in max_positions:
+            if self.keys_freq[pos][1] > mru_freq:
+                break
+            ins_pos = pos
+        self.keys_freq.pop(mru_pos)
+        self.keys_freq.insert(ins_pos, [mru_key, mru_freq])
 
     def put(self, key, item):
         """
@@ -37,20 +52,28 @@ class LFUCache(BaseCaching):
         """
         if key is None or item is None:
             return
-        if key in self.cache_data:
+
+        if key not in self.cache_data:
+            if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                lfu_key, _ = self.keys_freq[-1]
+                self.cache_data.pop(lfu_key)
+                self.keys_freq.pop()
+                print(f"DISCARD: {lfu_key}")
+            self.cache_data[key] = item
+            ins_index = len(self.keys_freq)
+            for i, key_freq in enumerate(self.keys_freq):
+                if key_freq[1] == 0:
+                    ins_index = i
+                    break
+            self.keys_freq.insert(ins_index, [key, 0])
+        else:
+            self.cache_data[key] = item
             self.__reorder_items(key)
-        elif len(self.cache_data) >= self.MAX_ITEMS:
-            lfu = min(self.key_freq, key=self.key_freq.get)
-            self.key_freq.pop(lfu)
-            self.cache_data.pop(lfu)
-            print(f"DISCARD: {lfu}")
-        self.cache_data[key] = item
-        self.key_freq[key] = 0
 
     def get(self, key):
         """
-        Retrieves an item from the cache by its key.
+        Retrieves an item from the cache by key.
         """
-        if key in self.cache_data:
+        if key is not None and key in self.cache_data:
             self.__reorder_items(key)
         return self.cache_data.get(key, None)
