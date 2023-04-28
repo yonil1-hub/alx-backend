@@ -4,7 +4,7 @@
 A basic Flask app with Babel localization and timezone support
 """
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_babel import Babel
 
 
@@ -30,12 +30,23 @@ babel = Babel(app)
 app.config.from_object(Config)
 
 
+def get_locale():
+    """
+    Determines the best match for the user's preferred language
+    based on their browser settings.
+
+    Returns:
+        str: The best match for the user's preferred language
+    """
+    return request.accept_languages.best_match(app.config["LANGUAGES"])
+
+
 @app.route("/", methods=["GET"], strict_slashes=False)
 def index():
     """
     Renders the index.html template
     """
-    return render_template("1-index.html")
+    return render_template("2-index.html")
 
 
 if __name__ == "__main__":
