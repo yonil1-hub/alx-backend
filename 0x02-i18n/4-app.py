@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A Basic flask application
+    4-Force locale with URL parameter
 """
 from flask import Flask
 from flask import request
@@ -10,7 +10,9 @@ from flask_babel import Babel
 
 class Config(object):
     """
-    Application configuration class
+        Configuration class for Babel.
+        It configures the default language to be English
+        and the default timezone to be UTC.
     """
     LANGUAGES = ['en', 'fr']
     BABEL_DEFAULT_LOCALE = 'en'
