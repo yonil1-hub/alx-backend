@@ -1,52 +1,48 @@
 #!/usr/bin/env python3
-"""4-Force locale with URL parameter"""
-
-from typing import Optional
-from flask import Flask, render_template, request
+"""
+A Basic flask application
+"""
+from flask import Flask
+from flask import request
+from flask import render_template
 from flask_babel import Babel
 
-# Create a Config class
-class Config:
-    """Configuration class for Babel.
 
-    It configures the default language to be English
-    and the default timezone to be UTC.
+class Config(object):
     """
-
-    LANGUAGES = ["en", "fr"]
-    BABEL_DEFAULT_LOCALE = "en"
-    BABEL_DEFAULT_TIMEZONE = "UTC"
-
-def get_locale() -> Optional[str]:
-    """Returns the best match with our supported languages.
-
-    If the incoming request contains a locale argument
-    and it is a valid locale, it returns it.
-    Otherwise, it returns the best match with our supported languages.
+    Application configuration class
     """
-    locale = request.args.get("locale")
-    if locale in app.config["LANGUAGES"]:
-        return locale
-    return request.accept_languages.best_match(app.config["LANGUAGES"])
+    LANGUAGES = ['en', 'fr']
+    BABEL_DEFAULT_LOCALE = 'en'
+    BABEL_DEFAULT_TIMEZONE = 'UTC'
 
-# Create an instance of Flask
+
+# Instantiate the application object
 app = Flask(__name__)
-
-# Create an instance of Babel
-babel = Babel(app)
-
-# Configure the app with the Config class
 app.config.from_object(Config)
 
-# Initialize Babel with the app and the get_locale function
-babel.init_app(app, locale_selector=get_locale)
+# Wrap the application with Babel
+babel = Babel(app)
 
-# Create a route for the index page that renders the index.html template
-@app.route("/", methods=["GET"], strict_slashes=False)
+
+@babel.localeselector
+def get_locale() -> str:
+    """
+    Gets locale from request object
+    """
+    locale = request.args.get('locale', '').strip()
+    if locale and locale in Config.LANGUAGES:
+        return locale
+    return request.accept_languages.best_match(app.config['LANGUAGES'])
+
+
+@app.route('/', strict_slashes=False)
 def index() -> str:
-    """Renders the index.html template."""
-    return render_template("4-index.html")
+    """
+    Renders a basic html template
+    """
+    return render_template('4-index.html')
 
-# Run the app only if this file is called directly
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     app.run()
